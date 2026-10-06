@@ -1,0 +1,66 @@
+---
+description: 前端技术栈、目录分层、状态管理与代码风格规范（沿用 Lemma AI 前端规范）
+globs: frontend/**
+alwaysApply: false
+---
+
+# 前端开发准则
+
+## 总体原则
+
+- 清晰边界、单一职责、最小必要复杂度；能简单解决的问题不要过度设计
+- 优先选择与当前技术栈和目录架构一致的实现方式，禁止随意引入新框架或平行体系
+- 不为未来不确定需求提前抽象；只有重复明显、收益明确时才抽象
+- 目录结构是长期骨架，新增目录或分层前先判断是否真的必要
+- 一个领域只能有一个真相源，前端共享类型的真相源在 `types/`
+
+## 技术栈
+
+React 19 + TypeScript + Vite + Tailwind CSS v4 + shadcn/ui（new-york / neutral / lucide）+ React Router + TanStack Query + Zustand + axios；部署到 Vercel。
+未经明确决策，不引入新的状态管理库、前端框架或平行的组件体系。
+
+## 目录与分层（`frontend/src/`）
+
+- `features/`：业务逻辑主要归属地。有业务语义的组件、hooks、请求逻辑放回所属 feature；feature 之间只能通过对方根目录的 `index.ts` 引用，禁止引用对方内部文件
+- `components/`：只放无业务语义的通用 UI（`ui/` 为 shadcn 基础组件）。禁止在这里发请求或绑定业务状态
+- `layouts/`：页面布局骨架，不放业务逻辑
+- `pages/`：路由页面，只负责从 `features/` 和 `components/` 拼装，禁止写复杂业务逻辑
+- `hooks/`：仅放跨 feature 复用的全局 hooks；feature 私有 hooks 放回 feature
+- `stores/`：仅放 Zustand 客户端状态
+- `lib/`：axios 实例、工具函数、常量、环境变量读取；具体业务请求跟随对应 feature
+- `mock/`：开发期模拟数据，不得成为真实逻辑的依赖
+- `types/`：全局共享类型；局部类型就近放置
+- `assets/`：需要构建处理的图片、SVG、字体
+
+## 状态管理
+
+- 服务端数据（后端 API 或其他外部数据源）：TanStack Query，负责缓存、失效、重试
+- 纯前端 UI 状态（侧边栏开关、主题等）：Zustand
+- 组件内部临时状态（表单输入、弹窗开关）：`useState`
+- 禁止把服务端数据塞进 Zustand，禁止在 Zustand 里发请求；同一份状态只用一套机制管理
+
+## 组件与依赖
+
+- shadcn/ui 是基础组件来源但不是唯一来源；基于 shadcn 的第三方组件优先复制源码进项目，便于用 Tailwind 深度定制
+- 外部组件接入后必须适配现有样式体系和目录边界；禁止修改 `node_modules`
+- 新依赖必须有明确用途，一处小需求优先用现有工具解决
+
+## 请求与环境变量
+
+- 调用后端 REST API 统一走 `lib/` 中封装的 axios 实例，并由 TanStack Query 管理；组件里禁止裸用 axios/fetch
+- 环境变量以 `VITE_` 开头，集中在 `lib/env.ts` 读取，不到处散读 `import.meta.env`
+- `VITE_` 变量会被打包进浏览器代码，只能放可公开的值；任何私钥、服务端密钥都不得进入前端
+- `.env` 禁止提交，提供 `.env.example` 列出变量名
+
+## 代码风格
+
+- TypeScript 严格模式，禁止 `any`（必要时用 `unknown`）
+- 组件文件 PascalCase（`ClaimCard.tsx`），工具函数 camelCase；页面组件以 `Page` 结尾
+- 用 `@/` 别名引用 `src` 内模块，组件用具名导出，className 合并用 `cn()`
+- 手写代码单引号、不加分号；shadcn 生成的 `components/ui/` 文件保持生成时的风格
+
+## AI 协作
+
+- 修改现有功能前先读对应 `features/` 下的相关文件；新文件严格放到正确层级
+- 方案与本规则冲突时优先遵守规则并提醒用户；规则明显妨碍开发时先提议改规则，而不是绕过
+- 不要主动使用 Git，是否 commit 和合并由用户决定
