@@ -1,0 +1,94 @@
+--- a/bounty-cre/workflow.ts
++++ b/bounty-cre/workflow.ts
+@@ -18,7 +18,6 @@
+   chainId: z.string(),
+   vault: z.string(),
+   bounty: z.string(),
+-  caller: z.string(),
+   payout: z.string(),
+   value: z.string(),
+   threshold: z.string(),
+@@ -29,9 +28,19 @@
+ const REPORT_TYPES =
+   'uint256 chainId, address bounty, address target, uint64 blockNumber, bytes32 blockHash, uint256 threshold, uint256 preBalance, uint256 postBalance, address payout'
+ 
++// Fresh sender with no role on any target, funded only inside the simulation.
++const SIM_SENDER: Address = '0x1000000000000000000000000000000000000001'
++// Balance reader injected via state override: returns BALANCE(calldata[0:32]).
++// The enclave measures the target itself; nothing the unpublished code returns is trusted.
++const BALANCE_PROBE: Address = '0x2000000000000000000000000000000000000002'
++const BALANCE_PROBE_CODE: Hex = '0x6000353160005260206000f3'
++const SIM_SENDER_BUFFER = 10n ** 18n
++
+ type RpcError = { message?: string }
+ type RpcBody = { result?: unknown; error?: RpcError }
+ type BlockResult = { number?: string; hash?: string }
++type SimulatedCall = { status?: string; returnData?: string }
++type SimulatedBlock = { calls?: SimulatedCall[] }
+ 
+ const asAddress = (value: string, label: string): Address => {
+   if (!isAddress(value)) {
+@@ -78,7 +87,6 @@
+   const config = runtime.config
+   const vault = asAddress(config.vault, 'vault')
+   const bounty = asAddress(config.bounty, 'bounty')
+-  const caller = asAddress(config.caller, 'caller')
+   const payout = asAddress(config.payout, 'payout')
+   const threshold = BigInt(config.threshold)
+   const value = BigInt(config.value)
+@@ -109,22 +117,43 @@
+   const blockNumber = BigInt(block.number)
+   const blockHash = asHex(block.hash, 'block hash')
+ 
+-  const callResult = postJson(runtime, 'eth_call', [
++  const preBalance = BigInt(postJson(runtime, 'eth_getBalance', [vault, block.number]) as string)
++
++  // One simulated block on top of `block`: the unpublished creation, then the probe.
++  const simulated = postJson(runtime, 'eth_simulateV1', [
+     {
+-      from: caller,
+-      data,
+-      value: `0x${value.toString(16)}`,
+-      gas: '0x7a1200',
++      blockStateCalls: [
++        {
++          stateOverrides: {
++            [SIM_SENDER]: { balance: `0x${(value + SIM_SENDER_BUFFER).toString(16)}` },
++            [BALANCE_PROBE]: { code: BALANCE_PROBE_CODE },
++          },
++          calls: [
++            { from: SIM_SENDER, data, value: `0x${value.toString(16)}`, gas: '0x7a1200' },
++            {
++              from: SIM_SENDER,
++              to: BALANCE_PROBE,
++              data: encodeAbiParameters(parseAbiParameters('address'), [vault]),
++            },
++          ],
++        },
++      ],
+     },
+     block.number,
+-  ]) as string
+-  const returned = asHex(callResult, 'eth_call result')
+-  if ((returned.length - 2) / 2 !== 64) {
+-    throw new Error(`eth_call return is not 64 bytes`)
++  ]) as SimulatedBlock[]
++  const [attack, probe] = simulated[0]?.calls ?? []
++  if (!attack || !probe) {
++    throw new Error('eth_simulateV1 returned fewer than two calls')
+   }
+-  const [preBalance, postBalance] = decodeAbiParameters(
+-    parseAbiParameters('uint256, uint256'),
+-    returned,
++  if (attack.status !== '0x1') {
++    throw new Error('unpublished transaction reverted')
++  }
++  if (probe.status !== '0x1' || !probe.returnData) {
++    throw new Error('balance probe failed')
++  }
++  const [postBalance] = decodeAbiParameters(
++    parseAbiParameters('uint256'),
++    asHex(probe.returnData, 'probe result'),
+   )
+   if (preBalance < threshold || postBalance >= threshold) {
+     throw new Error(`predicate failed pre=${preBalance} post=${postBalance}`)
