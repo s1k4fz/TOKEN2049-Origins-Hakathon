@@ -1,0 +1,1 @@
+export { ProtectGuideContent } from './ProtectGuideContent'
