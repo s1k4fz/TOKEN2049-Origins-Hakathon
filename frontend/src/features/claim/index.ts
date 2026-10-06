@@ -1,5 +1,5 @@
 export { useClaimQuery, useClaimsQuery } from './claimApi'
-export { ClaimConversation } from './ClaimConversation'
+export { ClaimView } from './ClaimView'
 export { ClaimSidebarList } from './ClaimSidebarList'
 export { ClaimSubmissionList } from './ClaimSubmissionList'
 export { ClaimWeeklyCard } from './ClaimWeeklyCard'

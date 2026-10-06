@@ -43,6 +43,8 @@ function paidScript(program: MockProgram, txBytes: number): ClaimEvent[] {
     { type: 'simulating', at: 700 },
     ...enclaveLogs(program, txBytes, POST_EXPLOIT_LAMPORTS),
     measured(program, POST_EXPLOIT_LAMPORTS),
+    { type: 'log', at: 3700, line: 'enclave  pre ≥ threshold && post < threshold = true' },
+    { type: 'log', at: 4800, line: 'cre      report encoded (solana · ecdsa · keccak256) · 96 bytes' },
     {
       type: 'reported',
       at: 4900,
@@ -55,6 +57,8 @@ function paidScript(program: MockProgram, txBytes: number): ClaimEvent[] {
         .join('')
         .padEnd(192, 'a'),
     },
+    { type: 'log', at: 5500, line: 'chain    forwarder submitted on_report to the bounty program' },
+    { type: 'log', at: 6300, line: 'chain    confirmed · vault paused · bounty paid' },
     {
       type: 'settled',
       at: 6400,
@@ -72,6 +76,7 @@ function rejectedScript(program: MockProgram, txBytes: number): ClaimEvent[] {
     { type: 'simulating', at: 700 },
     ...enclaveLogs(program, txBytes, program.vaultBalanceLamports),
     measured(program, program.vaultBalanceLamports),
+    { type: 'log', at: 3650, line: 'enclave  pre ≥ threshold && post < threshold = false · no report' },
     { type: 'rejected', at: 3700 },
   ]
 }
