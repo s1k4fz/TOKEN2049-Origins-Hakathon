@@ -3,12 +3,14 @@ import { CircleCheckBig } from 'lucide-react'
 import { ProgressStatusIcon } from '@/components/ProgressStatusIcon'
 import { SmoothHeight } from '@/components/SmoothHeight'
 import { Spinner } from '@/components/ui/spinner'
+import { useMessages } from '@/hooks/useMessages'
 import type { ClaimStageStatus } from './claimProgress'
 
 function StageIcon({ status }: { status: ClaimStageStatus }) {
+  const m = useMessages()
   if (status === 'done') return <CircleCheckBig className="size-4 text-zinc-950" />
   if (status === 'failed') return <ProgressStatusIcon status="failed" />
-  return <Spinner aria-label="In progress" className="size-[15px] text-zinc-900" />
+  return <Spinner aria-label={m.common.inProgress} className="size-[15px] text-zinc-900" />
 }
 
 /** 一个验证阶段：状态图标 + 标题，下方细竖线串起该阶段的产出。 */

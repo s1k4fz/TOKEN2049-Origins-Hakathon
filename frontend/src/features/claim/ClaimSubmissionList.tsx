@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { ProgressStatusIcon, type ProgressStatus } from '@/components/ProgressStatusIcon'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useMessages } from '@/hooks/useMessages'
 import { formatShortDate, shortAddress } from '@/lib/format'
 import type { Claim } from '@/types/claim'
 import { useClaimsQuery } from './claimApi'
@@ -18,6 +19,7 @@ const outcomeIcon: Record<ClaimOutcome, ProgressStatus> = {
 
 /** 项目方视角的收件箱：某个程序收到的全部提交。 */
 export function ClaimSubmissionList({ bountyId }: { bountyId: string }) {
+  const m = useMessages()
   const navigate = useNavigate()
   const claimsQuery = useClaimsQuery()
   const claims = (claimsQuery.data ?? NO_CLAIMS).filter((claim) => claim.bountyId === bountyId)
@@ -33,11 +35,11 @@ export function ClaimSubmissionList({ bountyId }: { bountyId: string }) {
   }
 
   if (claimsQuery.isError) {
-    return <p className="p-3 text-sm text-muted-foreground">Failed to load submissions</p>
+    return <p className="p-3 text-sm text-muted-foreground">{m.claim.inbox.loadFailed}</p>
   }
 
   if (claims.length === 0) {
-    return <p className="p-3 text-sm text-muted-foreground">No submissions yet</p>
+    return <p className="p-3 text-sm text-muted-foreground">{m.common.noSubmissions}</p>
   }
 
   return (
@@ -55,14 +57,14 @@ export function ClaimSubmissionList({ bountyId }: { bountyId: string }) {
             </span>
             <div className="min-w-0 grow">
               <p className="truncate text-sm font-medium">
-                {claim.id} · payout <span className="font-mono">{shortAddress(claim.payout)}</span>
+                {claim.id} · {m.claim.inbox.payout} <span className="font-mono">{shortAddress(claim.payout)}</span>
               </p>
               <p className="truncate text-sm text-muted-foreground">
-                {getClaimStatusLabel(progress)} · {claim.txBytes}-byte sealed transaction
+                {m.claim.inbox.detail(getClaimStatusLabel(progress, m), claim.txBytes)}
               </p>
             </div>
             <span className="shrink-0 text-sm whitespace-nowrap text-muted-foreground">
-              {formatShortDate(claim.createdAt)}
+              {formatShortDate(claim.createdAt, m.meta.dateLocale)}
             </span>
           </li>
         )

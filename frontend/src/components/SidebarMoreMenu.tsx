@@ -1,5 +1,6 @@
 import { Ellipsis, type LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useMessages } from '@/hooks/useMessages'
 import { ActionMenu, ActionMenuItem } from './ActionMenu'
 
 export interface SidebarMoreMenuItem {
@@ -15,6 +16,8 @@ export function SidebarMoreMenu({
   items: SidebarMoreMenuItem[]
   getHref: (item: SidebarMoreMenuItem) => string
 }) {
+  const m = useMessages()
+
   if (items.length === 0) {
     return null
   }
@@ -31,7 +34,7 @@ export function SidebarMoreMenu({
           className="flex h-9 w-full items-center gap-2 rounded-sm px-3 text-sm text-black transition-colors hover:bg-zinc-200/70"
         >
           <Ellipsis className="size-[18px] shrink-0" strokeWidth={1.75} />
-          <span className="truncate">More</span>
+          <span className="truncate">{m.nav.more}</span>
         </button>
       }
     >

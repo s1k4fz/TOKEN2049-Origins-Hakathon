@@ -14,7 +14,18 @@ export function base64ByteLength(value: string): number {
   return Math.floor((value.length * 3) / 4) - padding
 }
 
-export async function sha256Hex(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
+export function base64ToBytes(value: string): Uint8Array<ArrayBuffer> {
+  return Uint8Array.from(atob(value), (char) => char.charCodeAt(0))
+}
+
+export function bytesToBase64(bytes: Uint8Array): string {
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary)
+}
+
+/** 交易字节的 sha256，与后端记录的 txSha256 一致。 */
+export async function sha256OfBase64(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', base64ToBytes(value))
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
 }

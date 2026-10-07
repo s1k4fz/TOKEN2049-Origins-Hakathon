@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { ProgressMarker } from '@/components/ProgressMarker'
+import { useMessages } from '@/hooks/useMessages'
 import { cn } from '@/lib/utils'
 import type { Bounty } from '@/types/bounty'
 import { BountyCover } from './BountyCover'
@@ -28,6 +29,7 @@ export function BountyDashboardSidebar({
   activeSection: BountySection
   onSectionChange: (section: BountySection) => void
 }) {
+  const m = useMessages()
   const [descriptionExpanded, setDescriptionExpanded] = useState(false)
   const isDescriptionLong = bounty.description.length > COLLAPSED_DESCRIPTION_LENGTH
 
@@ -42,7 +44,9 @@ export function BountyDashboardSidebar({
         {isDescriptionLong ? (
           <button
             type="button"
-            aria-label={descriptionExpanded ? 'Collapse description' : 'Expand description'}
+            aria-label={
+              descriptionExpanded ? m.bounty.dashboard.collapseDescription : m.bounty.dashboard.expandDescription
+            }
             onClick={() => setDescriptionExpanded((current) => !current)}
             className="float-right mt-[1.5px] ml-1 flex h-[18px] w-[26px] items-center justify-center rounded-full border border-zinc-300 text-zinc-500 hover:text-zinc-800"
           >

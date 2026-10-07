@@ -1,5 +1,7 @@
 import { PageNotice } from '@/components/PageNotice'
+import { useMessages } from '@/hooks/useMessages'
 
 export function NotFoundPage() {
-  return <PageNotice message="Page not found" />
+  const m = useMessages()
+  return <PageNotice message={m.notice.pageNotFound} />
 }

@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { NetworkStatus } from '@/components/NetworkStatus'
 import { Button } from '@/components/ui/button'
+import { useMessages } from '@/hooks/useMessages'
 import type { Claim } from '@/types/claim'
 import { ClaimLogPanel } from './ClaimLogPanel'
 import { ClaimResultStats } from './ClaimResultStats'
@@ -13,6 +14,7 @@ import { useClaimClock } from './useClaimClock'
 
 /** 验证过程页主体：沿用学习点页的双栏外壳，左栏是验证卡片，右栏是日志面板。 */
 export function ClaimView({ claim }: { claim: Claim }) {
+  const m = useMessages()
   const scrollRef = useRef<HTMLDivElement>(null)
   const now = useClaimClock([claim])
   const progress = getClaimProgress(claim, now)
@@ -33,7 +35,7 @@ export function ClaimView({ claim }: { claim: Claim }) {
           <article className="mx-auto flex w-full max-w-[44rem] flex-col">
             <div className="flex items-center justify-between gap-4">
               <h1 className="min-w-0 text-[32px] leading-10 font-semibold tracking-tight text-zinc-950">
-                Claim {claim.id}
+                {m.claim.title(claim.id)}
               </h1>
               <div className="flex shrink-0 items-center gap-3">
                 <NetworkStatus />
@@ -44,7 +46,7 @@ export function ClaimView({ claim }: { claim: Claim }) {
                 >
                   <Link to={`/bounties/${claim.bountyId}`}>
                     <ArrowLeft className="size-3.5" />
-                    Back to bounty
+                    {m.common.backToBounty}
                   </Link>
                 </Button>
               </div>

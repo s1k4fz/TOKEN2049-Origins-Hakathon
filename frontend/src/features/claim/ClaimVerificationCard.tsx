@@ -4,12 +4,14 @@ import { Capsule } from '@/components/Capsule'
 import { ProgressStatusIcon } from '@/components/ProgressStatusIcon'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
+import { useMessages } from '@/hooks/useMessages'
 import { explorerTxUrl } from '@/lib/explorer'
 import { formatSol, formatSolCompact, shortAddress, shortHash } from '@/lib/format'
+import type { Messages } from '@/lib/i18n'
 import type { Claim, ClaimStage } from '@/types/claim'
 import { ClaimOutlineTree, type OutlineModule, type OutlineStatus } from './ClaimOutlineTree'
 import { ClaimStageBlock } from './ClaimStageBlock'
-import { claimStageTitles, isInvariantBroken, type ClaimProgress } from './claimProgress'
+import { isInvariantBroken, type ClaimProgress } from './claimProgress'
 
 const actionButtonClassName = 'h-[33px] rounded-full px-[12.5px] text-[14px] font-normal'
 const secondaryActionButtonClassName = `${actionButtonClassName} border-zinc-300 bg-transparent text-zinc-800 hover:bg-zinc-100 hover:text-zinc-950`
@@ -19,34 +21,36 @@ const primaryActionButtonClassName = `${actionButtonClassName} bg-zinc-950 text-
 const VERIFYING_STAGES: ClaimStage[] = ['submitted', 'simulating', 'measured']
 
 function CardHeader({ claim, progress }: { claim: Claim; progress: ClaimProgress }) {
+  const m = useMessages()
+  const { header, description: copy } = m.claim
   const { outcome, phase, measured, settled, failed } = progress
   const title =
     outcome === 'paid'
-      ? `Bounty paid: ${formatSolCompact(settled?.payoutDeltaLamports ?? 0)}`
+      ? header.paid(formatSolCompact(settled?.payoutDeltaLamports ?? 0))
       : outcome === 'rejected'
-        ? 'No payout: invariant held'
+        ? header.rejected
         : outcome === 'failed'
-          ? 'Verification failed'
+          ? header.failed
           : phase === 'settling'
-            ? 'Settling on Solana'
-            : 'Verifying inside the enclave'
+            ? header.settling
+            : header.verifying
   const description =
     outcome === 'paid'
-      ? 'The vault was paused in the same transaction. No funds were ever at risk.'
+      ? copy.paid
       : outcome === 'rejected' && measured
-        ? `After simulation the vault still holds ${formatSol(measured.postLamports)}, which is above the ${formatSolCompact(measured.thresholdLamports)} threshold. Nothing was published.`
+        ? copy.rejected(formatSol(measured.postLamports), formatSolCompact(measured.thresholdLamports))
         : outcome === 'failed'
-          ? (failed?.message ?? 'Something went wrong.')
+          ? (failed?.message ?? copy.failedFallback)
           : phase === 'settling'
-            ? 'The signed report is checked on-chain. Pausing the vault and paying the bounty happen in one transaction.'
-            : `Your exploit for ${claim.bountyName} stays inside the enclave. Only the measured balances and your payout address come out.`
+            ? copy.settling
+            : copy.verifying(claim.bountyName)
 
   return (
     <div>
       <h3 className="flex items-center gap-2 text-[19.5px] leading-7 font-semibold tracking-tight text-zinc-900">
         <span className="flex size-5 shrink-0 translate-y-[1px] items-center justify-center [&_svg]:size-5">
           {outcome === 'running' ? (
-            <Spinner aria-label="Verifying" className="size-[17px] text-zinc-900" />
+            <Spinner aria-label={header.verifyingAria} className="size-[17px] text-zinc-900" />
           ) : (
             <ProgressStatusIcon status={outcome === 'paid' ? 'completed' : 'failed'} />
           )}
@@ -59,14 +63,16 @@ function CardHeader({ claim, progress }: { claim: Claim; progress: ClaimProgress
 }
 
 function StageContent({ stage, claim, progress }: { stage: ClaimStage; claim: Claim; progress: ClaimProgress }) {
+  const m = useMessages()
+  const { capsules } = m.claim
   const { measured } = progress
 
   if (stage === 'submitted') {
     return (
       <>
-        <Capsule mono>{claim.txBytes} bytes</Capsule>
+        <Capsule mono>{m.submit.bytes(claim.txBytes)}</Capsule>
         <Capsule mono>sha256 {shortHash(claim.txSha256)}</Capsule>
-        <Capsule mono>payout {shortAddress(claim.payout)}</Capsule>
+        <Capsule mono>{capsules.payout(shortAddress(claim.payout))}</Capsule>
       </>
     )
   }
@@ -74,9 +80,9 @@ function StageContent({ stage, claim, progress }: { stage: ClaimStage; claim: Cl
   if (stage === 'simulating') {
     return (
       <>
-        <Capsule>Confidential handler</Capsule>
-        <Capsule>sigVerify on</Capsule>
-        <Capsule>Never broadcast</Capsule>
+        <Capsule>{capsules.confidentialHandler}</Capsule>
+        <Capsule>{capsules.sigVerifyOn}</Capsule>
+        <Capsule>{capsules.neverBroadcast}</Capsule>
       </>
     )
   }
@@ -85,10 +91,10 @@ function StageContent({ stage, claim, progress }: { stage: ClaimStage; claim: Cl
     const broken = isInvariantBroken(measured)
     return (
       <>
-        <Capsule mono>Before {formatSol(measured.preLamports)}</Capsule>
-        <Capsule mono>After {formatSol(measured.postLamports)}</Capsule>
-        <Capsule mono>Threshold {formatSolCompact(measured.thresholdLamports)}</Capsule>
-        <Capsule tone={broken ? 'success' : 'danger'}>{broken ? 'Invariant broken' : 'Invariant held'}</Capsule>
+        <Capsule mono>{capsules.before(formatSol(measured.preLamports))}</Capsule>
+        <Capsule mono>{capsules.after(formatSol(measured.postLamports))}</Capsule>
+        <Capsule mono>{capsules.threshold(formatSolCompact(measured.thresholdLamports))}</Capsule>
+        <Capsule tone={broken ? 'success' : 'danger'}>{broken ? capsules.broken : capsules.held}</Capsule>
       </>
     )
   }
@@ -97,13 +103,14 @@ function StageContent({ stage, claim, progress }: { stage: ClaimStage; claim: Cl
 }
 
 function VerifyingStages({ claim, progress }: { claim: Claim; progress: ClaimProgress }) {
+  const m = useMessages()
   const { failed } = progress
   return (
     <div className="mt-4 flex flex-col">
       {progress.stages
         .filter(({ stage }) => VERIFYING_STAGES.includes(stage))
         .map(({ stage, status }) => (
-          <ClaimStageBlock key={stage} status={status} title={claimStageTitles[stage]}>
+          <ClaimStageBlock key={stage} status={status} title={m.claim.stages[stage]}>
             <StageContent stage={stage} claim={claim} progress={progress} />
             {status === 'failed' && failed?.stage === stage ? (
               <p className="w-full text-[13px] text-destructive">{failed.message}</p>
@@ -114,7 +121,8 @@ function VerifyingStages({ claim, progress }: { claim: Claim; progress: ClaimPro
   )
 }
 
-function getOutlineModules(claim: Claim, progress: ClaimProgress): OutlineModule[] {
+function getOutlineModules(claim: Claim, progress: ClaimProgress, m: Messages): OutlineModule[] {
+  const text = m.claim.outline
   const { outcome, measured, reported, settled, failed } = progress
   if (!measured) return []
 
@@ -122,11 +130,11 @@ function getOutlineModules(claim: Claim, progress: ClaimProgress): OutlineModule
   const modules: OutlineModule[] = [
     {
       id: 'invariant',
-      title: `${broken ? 'Invariant broken' : 'Invariant held'} · vault ≥ ${formatSolCompact(measured.thresholdLamports)}`,
+      title: text.invariant(broken, formatSolCompact(measured.thresholdLamports)),
       status: broken ? 'done' : 'failed',
       rows: [
-        { id: 'pre', label: 'Vault before simulation', meta: formatSol(measured.preLamports), status: 'done' },
-        { id: 'post', label: 'Vault after simulation', meta: formatSol(measured.postLamports), status: 'done' },
+        { id: 'pre', label: text.vaultBefore, meta: formatSol(measured.preLamports), status: 'done' },
+        { id: 'post', label: text.vaultAfter, meta: formatSol(measured.postLamports), status: 'done' },
       ],
     },
   ]
@@ -135,9 +143,9 @@ function getOutlineModules(claim: Claim, progress: ClaimProgress): OutlineModule
     if (outcome === 'rejected') {
       modules.push({
         id: 'report',
-        title: 'No report produced',
+        title: text.noReport,
         status: 'failed',
-        rows: [{ id: 'exploit', label: 'Exploit transaction', meta: 'never published', status: 'done' }],
+        rows: [{ id: 'exploit', label: text.exploitTx, meta: text.neverPublished, status: 'done' }],
       })
     }
     return modules
@@ -145,12 +153,12 @@ function getOutlineModules(claim: Claim, progress: ClaimProgress): OutlineModule
 
   modules.push({
     id: 'report',
-    title: `DON-signed report · ${reported.reportHex.length / 2} bytes`,
+    title: text.report(reported.reportHex.length / 2),
     status: 'done',
     rows: [
-      { id: 'exploit', label: 'Exploit transaction', meta: 'not included', status: 'done' },
-      { id: 'payout', label: 'Payout address', meta: shortAddress(claim.payout), status: 'done' },
-      { id: 'slot', label: 'Simulated at slot', meta: measured.slot.toLocaleString('en-US'), status: 'done' },
+      { id: 'exploit', label: text.exploitTx, meta: text.notIncluded, status: 'done' },
+      { id: 'payout', label: text.payoutAddress, meta: shortAddress(claim.payout), status: 'done' },
+      { id: 'slot', label: text.simulatedAtSlot, meta: measured.slot.toLocaleString('en-US'), status: 'done' },
     ],
   })
 
@@ -158,18 +166,18 @@ function getOutlineModules(claim: Claim, progress: ClaimProgress): OutlineModule
   const txStatus: OutlineStatus = settled ? 'done' : txFailed ? 'failed' : 'active'
   modules.push({
     id: 'transaction',
-    title: 'on_report transaction',
+    title: text.transaction,
     status: txStatus,
     rows: [
       {
         id: 'pause',
-        label: 'Pause the vault through its guardian hook',
-        meta: settled ? (settled.vaultPaused ? 'paused' : 'live') : undefined,
+        label: text.pauseVault,
+        meta: settled ? (settled.vaultPaused ? text.paused : text.live) : undefined,
         status: txStatus,
       },
       {
         id: 'pay',
-        label: `Pay the bounty to ${shortAddress(claim.payout)}`,
+        label: text.payBounty(shortAddress(claim.payout)),
         meta: settled ? `+${formatSolCompact(settled.payoutDeltaLamports)}` : undefined,
         status: settled ? 'done' : txFailed ? 'failed' : 'pending',
       },
@@ -179,6 +187,7 @@ function getOutlineModules(claim: Claim, progress: ClaimProgress): OutlineModule
 }
 
 export function ClaimVerificationCard({ claim, progress }: { claim: Claim; progress: ClaimProgress }) {
+  const m = useMessages()
   const navigate = useNavigate()
   const { outcome, phase, measured, settled } = progress
   const backToBounty = () => navigate(`/bounties/${claim.bountyId}`)
@@ -190,11 +199,11 @@ export function ClaimVerificationCard({ claim, progress }: { claim: Claim; progr
     actions = (
       <>
         <Button type="button" variant="outline" className={secondaryActionButtonClassName} onClick={backToBounty}>
-          Back to bounty
+          {m.common.backToBounty}
         </Button>
         <Button asChild className={primaryActionButtonClassName}>
           <a href={explorerTxUrl(settled.signature)} target="_blank" rel="noreferrer">
-            View transaction
+            {m.common.viewTransaction}
           </a>
         </Button>
       </>
@@ -203,14 +212,14 @@ export function ClaimVerificationCard({ claim, progress }: { claim: Claim; progr
     actions = (
       <>
         <Button type="button" variant="outline" className={secondaryActionButtonClassName} onClick={backToBounty}>
-          Back to bounty
+          {m.common.backToBounty}
         </Button>
         <Button
           type="button"
           className={primaryActionButtonClassName}
           onClick={() => navigate('/', { state: { bountyId: claim.bountyId } })}
         >
-          Try again
+          {m.common.tryAgain}
         </Button>
       </>
     )
@@ -225,7 +234,7 @@ export function ClaimVerificationCard({ claim, progress }: { claim: Claim; progr
 
       {showOutline ? (
         <div key="outline" data-stage={phase}>
-          <ClaimOutlineTree modules={getOutlineModules(claim, progress)} />
+          <ClaimOutlineTree modules={getOutlineModules(claim, progress, m)} />
         </div>
       ) : (
         <div key="verifying" data-stage="verifying">

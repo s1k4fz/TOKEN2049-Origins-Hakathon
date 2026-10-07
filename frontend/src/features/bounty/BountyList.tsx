@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useMessages } from '@/hooks/useMessages'
 import { cn } from '@/lib/utils'
 import { BountyCard } from './BountyCard'
 import { useBountiesQuery } from './bountyApi'
-import { emptyTabNotice, filterBounties, type BountyListTab } from './bountyFilters'
+import { filterBounties, type BountyListTab } from './bountyFilters'
 
 function BountyListNotice({ children }: { children: ReactNode }) {
   return (
@@ -22,6 +23,7 @@ export function BountyList({
   searchTerm: string
   className?: string
 }) {
+  const m = useMessages()
   const bountiesQuery = useBountiesQuery()
 
   if (bountiesQuery.isPending) {
@@ -35,7 +37,7 @@ export function BountyList({
   if (bountiesQuery.isError) {
     return (
       <div className={className}>
-        <BountyListNotice>Failed to load programs</BountyListNotice>
+        <BountyListNotice>{m.bounty.loadFailed}</BountyListNotice>
       </div>
     )
   }
@@ -45,7 +47,7 @@ export function BountyList({
     return (
       <div className={className}>
         <BountyListNotice>
-          {searchTerm.trim() !== '' ? 'No matching programs' : emptyTabNotice[activeTab]}
+          {searchTerm.trim() !== '' ? m.bounty.noMatch : m.bounty.empty[activeTab]}
         </BountyListNotice>
       </div>
     )

@@ -4,11 +4,9 @@ export function formatSol(lamports: number, fractionDigits = 3): string {
   return `${(lamports / LAMPORTS_PER_SOL).toFixed(fractionDigits)} SOL`
 }
 
-/** 整数 SOL 不带小数（10 SOL），否则保留三位。 */
+/** 赏金、阈值这类整额去掉末尾的 0（10 SOL、0.5 SOL），最多保留三位。 */
 export function formatSolCompact(lamports: number): string {
-  return lamports % LAMPORTS_PER_SOL === 0
-    ? `${lamports / LAMPORTS_PER_SOL} SOL`
-    : formatSol(lamports)
+  return `${Number((lamports / LAMPORTS_PER_SOL).toFixed(3))} SOL`
 }
 
 export function shortAddress(address: string): string {
@@ -19,14 +17,14 @@ export function shortHash(hex: string): string {
   return `${hex.slice(0, 4)}…${hex.slice(-4)}`
 }
 
-export function formatShortDate(iso: string): string {
+export function formatShortDate(iso: string, locale = 'en-US'): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' })
 }
 
-export function formatTime(iso: string): string {
+export function formatTime(iso: string, locale = 'en-US'): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+  return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
 }

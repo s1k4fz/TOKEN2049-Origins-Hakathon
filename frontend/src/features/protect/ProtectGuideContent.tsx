@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { CalloutCard } from '@/components/CalloutCard'
 import { CodeBlock } from '@/components/CodeBlock'
+import { useMessages } from '@/hooks/useMessages'
 
 const GUARDIAN_SNIPPET = `pub struct Vault {
     pub paused: bool,
@@ -39,52 +40,54 @@ function GuideStep({ index, title, children }: { index: number; title: string; c
   )
 }
 
+/** 文案里用反引号包住的片段渲染成行内代码。 */
+function InlineCodeText({ text }: { text: string }) {
+  return text.split('`').map((part, index) =>
+    index % 2 === 1 ? (
+      <code key={index} className="font-mono text-[14px]">
+        {part}
+      </code>
+    ) : (
+      part
+    )
+  )
+}
+
 /** 项目方接入指南：三步把程序接入 SilentClaim。 */
 export function ProtectGuideContent() {
+  const m = useMessages()
+  const text = m.protect
+
   return (
     <div>
-      <p className="text-[17px] leading-[30px] text-zinc-700">
-        Lock a bounty, define what counts as broken, and let whitehats prove it without ever touching your funds. A
-        valid report pauses your program and pays the whitehat in the same transaction.
-      </p>
+      <p className="text-[17px] leading-[30px] text-zinc-700">{text.intro}</p>
 
       <div className="mt-10">
-        <GuideStep index={1} title="Add a pause hook">
+        <GuideStep index={1} title={text.step1Title}>
           <p>
-            Your program needs a <code className="font-mono text-[14px]">guardian</code> field and a{' '}
-            <code className="font-mono text-[14px]">pause</code> instruction that only the guardian can call. Every
-            state-changing instruction should refuse to run while paused.
+            <InlineCodeText text={text.step1Body} />
           </p>
           <CodeBlock caption="programs/your_vault/src/lib.rs" code={GUARDIAN_SNIPPET} />
           <CalloutCard type="requirement">
-            <p className="text-[15px] leading-[26px] text-zinc-700">
-              This is the only change to your program. SilentClaim never holds an upgrade key or an admin role.
-            </p>
+            <p className="text-[15px] leading-[26px] text-zinc-700">{text.step1Callout}</p>
           </CalloutCard>
         </GuideStep>
 
-        <GuideStep index={2} title="Make the bounty account your guardian">
-          <p>The bounty account is a program-derived address, so no private key can sign for it.</p>
+        <GuideStep index={2} title={text.step2Title}>
+          <p>{text.step2Body}</p>
           <CodeBlock code={BOUNTY_ACCOUNT_SNIPPET} />
           <CalloutCard type="why">
-            <p className="text-[15px] leading-[26px] text-zinc-700">
-              Only a DON-signed report can make the bounty program pause you, and it can only do so while paying the
-              whitehat. Nobody can pause your program for free.
-            </p>
+            <p className="text-[15px] leading-[26px] text-zinc-700">{text.step2Callout}</p>
           </CalloutCard>
         </GuideStep>
 
-        <GuideStep index={3} title="Register the bounty">
+        <GuideStep index={3} title={text.step3Title}>
           <p>
-            Call <code className="font-mono text-[14px]">register</code> from your admin key. The program checks that
-            the guardian is the bounty account, the vault is live, and the current balance is above the threshold.
+            <InlineCodeText text={text.step3Body} />
           </p>
           <CodeBlock code={REGISTER_SNIPPET} />
           <CalloutCard type="note">
-            <p className="text-[15px] leading-[26px] text-zinc-700">
-              To withdraw the bounty later, request a cancel and wait 7 days. The bounty stays claimable during that
-              time, so whitehats can trust it is really there.
-            </p>
+            <p className="text-[15px] leading-[26px] text-zinc-700">{text.step3Callout}</p>
           </CalloutCard>
         </GuideStep>
       </div>

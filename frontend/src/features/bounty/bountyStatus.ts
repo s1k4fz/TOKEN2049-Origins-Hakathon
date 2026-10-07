@@ -1,18 +1,13 @@
+import type { Messages } from '@/lib/i18n'
 import { formatSol, formatSolCompact } from '@/lib/format'
-import type { Bounty, BountyStatus } from '@/types/bounty'
-
-export const bountyStatusLabels: Record<BountyStatus, string> = {
-  active: 'Active',
-  cancel_pending: 'Cancel pending',
-  paid: 'Paid',
-  inactive: 'Inactive',
-}
+import type { Bounty } from '@/types/bounty'
 
 export function canSubmitTo(bounty: Bounty): boolean {
   return (bounty.status === 'active' || bounty.status === 'cancel_pending') && !bounty.vaultPaused
 }
 
 export interface ProtectionRow {
+  id: string
   text: string
   verified: boolean
   explorerAddress?: string
@@ -26,34 +21,41 @@ export interface ProtectionCondition {
   rows: ProtectionRow[]
 }
 
+function getProtectionChecks(bounty: Bounty) {
+  return {
+    isFunded: bounty.status !== 'inactive',
+    guardianIsBounty: bounty.guardian === bounty.bountyAccount,
+  }
+}
+
 /** 赏金详情页的 4 条保护条件，每条都可以由链上账户直接核对。 */
-export function getProtectionConditions(bounty: Bounty): ProtectionCondition[] {
+export function getProtectionConditions(bounty: Bounty, m: Messages): ProtectionCondition[] {
+  const text = m.bounty.conditions
   const amount = formatSolCompact(bounty.amountLamports)
   const threshold = formatSolCompact(bounty.thresholdLamports)
-  const guardianIsBounty = bounty.guardian === bounty.bountyAccount
-  const isFunded = bounty.status !== 'inactive'
+  const { isFunded, guardianIsBounty } = getProtectionChecks(bounty)
 
   return [
     {
       id: 'bounty',
-      title: 'Bounty locked',
-      summary: `${amount} is held by the bounty program, not by the protocol team. It can only leave through a verified report or a timelocked cancel.`,
+      title: text.bountyTitle,
+      summary: text.bountySummary(amount),
       verified: isFunded,
       rows: [
-        { text: `${amount} in the bounty account`, verified: isFunded, explorerAddress: bounty.bountyAccount },
-        { text: `Status: ${bountyStatusLabels[bounty.status]}`, verified: isFunded },
+        { id: 'held', text: text.bountyHeld(amount), verified: isFunded, explorerAddress: bounty.bountyAccount },
+        { id: 'status', text: text.bountyStatus(m.bounty.status[bounty.status]), verified: isFunded },
       ],
     },
     {
       id: 'invariant',
-      title: 'Invariant',
-      summary:
-        'The condition a valid exploit must break. The enclave measures it before and after simulating your transaction.',
+      title: text.invariantTitle,
+      summary: text.invariantSummary,
       verified: true,
       rows: [
-        { text: `Vault balance must stay ≥ ${threshold}`, verified: true },
+        { id: 'rule', text: text.invariantRule(threshold), verified: true },
         {
-          text: `Current vault balance: ${formatSol(bounty.vaultBalanceLamports)}`,
+          id: 'current',
+          text: text.invariantCurrent(formatSol(bounty.vaultBalanceLamports)),
           verified: true,
           explorerAddress: bounty.vault,
         },
@@ -61,24 +63,29 @@ export function getProtectionConditions(bounty: Bounty): ProtectionCondition[] {
     },
     {
       id: 'guardian',
-      title: 'Guardian',
-      summary:
-        'The bounty program is the only account allowed to pause this vault, so the payout and the pause happen in one transaction.',
+      title: text.guardianTitle,
+      summary: text.guardianSummary,
       verified: guardianIsBounty,
       rows: [
-        { text: 'Vault guardian is the bounty account', verified: guardianIsBounty, explorerAddress: bounty.vaultProgramId },
-        { text: bounty.vaultPaused ? 'Vault: Paused' : 'Vault: Live', verified: true },
+        {
+          id: 'guardian',
+          text: text.guardianIsBounty,
+          verified: guardianIsBounty,
+          explorerAddress: bounty.vaultProgramId,
+        },
+        { id: 'vault', text: bounty.vaultPaused ? text.vaultPaused : text.vaultLive, verified: true },
       ],
     },
     {
       id: 'timelock',
-      title: 'Withdrawal timelock',
-      summary: `The protocol must give ${bounty.timelockDays} days notice before pulling the bounty, and the bounty stays claimable during that time.`,
+      title: text.timelockTitle,
+      summary: text.timelockSummary(bounty.timelockDays),
       verified: true,
       rows: [
-        { text: `${bounty.timelockDays}-day notice enforced by the program`, verified: true },
+        { id: 'rule', text: text.timelockRule(bounty.timelockDays), verified: true },
         {
-          text: bounty.status === 'cancel_pending' ? 'Cancel requested' : 'No cancel requested',
+          id: 'cancel',
+          text: bounty.status === 'cancel_pending' ? text.cancelRequested : text.noCancel,
           verified: bounty.status !== 'cancel_pending',
         },
       ],
@@ -87,6 +94,8 @@ export function getProtectionConditions(bounty: Bounty): ProtectionCondition[] {
 }
 
 export function getProtectionProgress(bounty: Bounty): number {
-  const conditions = getProtectionConditions(bounty)
-  return Math.round((conditions.filter((condition) => condition.verified).length / conditions.length) * 100)
+  // 不变量和时间锁由程序本身保证，恒为已核验。
+  const { isFunded, guardianIsBounty } = getProtectionChecks(bounty)
+  const verified = [isFunded, true, guardianIsBounty, true]
+  return Math.round((verified.filter(Boolean).length / verified.length) * 100)
 }

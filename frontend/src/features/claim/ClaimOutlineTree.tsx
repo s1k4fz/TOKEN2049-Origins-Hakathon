@@ -2,6 +2,7 @@ import { CircleCheckBig } from 'lucide-react'
 import { BacklogStatusIcon } from '@/components/BacklogStatusIcon'
 import { ProgressStatusIcon } from '@/components/ProgressStatusIcon'
 import { Spinner } from '@/components/ui/spinner'
+import { useMessages } from '@/hooks/useMessages'
 
 export type OutlineStatus = 'done' | 'active' | 'failed' | 'pending'
 
@@ -20,9 +21,10 @@ export interface OutlineModule {
 }
 
 function OutlineIcon({ status }: { status: OutlineStatus }) {
+  const m = useMessages()
   if (status === 'done') return <CircleCheckBig className="size-4 text-zinc-950" />
   if (status === 'failed') return <ProgressStatusIcon status="failed" />
-  if (status === 'active') return <Spinner aria-label="In progress" className="size-[15px] text-zinc-900" />
+  if (status === 'active') return <Spinner aria-label={m.common.inProgress} className="size-[15px] text-zinc-900" />
   return <BacklogStatusIcon />
 }
 

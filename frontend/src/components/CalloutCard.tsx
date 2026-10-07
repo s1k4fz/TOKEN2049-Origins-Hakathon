@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
 import { calloutThemes, type CalloutType } from '@/components/calloutTheme'
+import { useMessages } from '@/hooks/useMessages'
 
 /** Callout 纯展示卡片壳：彩色竖条 + 图标 + 标签头，正文由调用方注入。 */
 export function CalloutCard({
@@ -10,7 +11,9 @@ export function CalloutCard({
   type: CalloutType
   children: ReactNode
 }) {
-  const { label, icon: Icon, color } = calloutThemes[type]
+  const m = useMessages()
+  const { icon: Icon, color } = calloutThemes[type]
+  const label = m.callout[type]
 
   return (
     <div

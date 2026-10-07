@@ -1,10 +1,13 @@
 import { CircleCheckBig, ExternalLink } from 'lucide-react'
 import { BacklogStatusIcon } from '@/components/BacklogStatusIcon'
 import { Button } from '@/components/ui/button'
+import { useMessages } from '@/hooks/useMessages'
 import { explorerAddressUrl } from '@/lib/explorer'
 import type { ProtectionCondition, ProtectionRow } from './bountyStatus'
 
 function ProtectionRowItem({ row }: { row: ProtectionRow }) {
+  const m = useMessages()
+
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 items-center gap-2">
@@ -22,7 +25,7 @@ function ProtectionRowItem({ row }: { row: ProtectionRow }) {
         >
           <a href={explorerAddressUrl(row.explorerAddress)} target="_blank" rel="noreferrer">
             <ExternalLink className="size-3.5" />
-            Explorer
+            {m.common.explorer}
           </a>
         </Button>
       ) : null}
@@ -37,7 +40,7 @@ export function BountyProtectionCard({ condition }: { condition: ProtectionCondi
       <p className="mt-2 text-[15px] leading-[24px] font-normal text-zinc-600">{condition.summary}</p>
       <div className="mt-6 flex flex-col gap-6">
         {condition.rows.map((row) => (
-          <ProtectionRowItem key={row.text} row={row} />
+          <ProtectionRowItem key={row.id} row={row} />
         ))}
       </div>
     </div>

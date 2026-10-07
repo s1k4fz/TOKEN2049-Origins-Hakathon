@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom'
 import { NetworkStatus } from '@/components/NetworkStatus'
 import { SubmitComposer } from '@/features/claim'
+import { useMessages } from '@/hooks/useMessages'
 
 function readBountyId(state: unknown): string | undefined {
   if (typeof state === 'object' && state !== null && 'bountyId' in state) {
@@ -11,6 +12,7 @@ function readBountyId(state: unknown): string | undefined {
 }
 
 export function SubmitPage() {
+  const m = useMessages()
   const location = useLocation()
 
   return (
@@ -21,11 +23,8 @@ export function SubmitPage() {
       <div className="flex h-full flex-col items-center justify-center px-6">
         <div className="w-full max-w-2xl space-y-6">
           <div className="space-y-2 text-center">
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Found a bug? Prove it privately.</h1>
-            <p className="text-sm text-zinc-500">
-              Your exploit is only simulated inside a Chainlink CRE confidential workflow. It is never broadcast or
-              published.
-            </p>
+            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">{m.submit.title}</h1>
+            <p className="text-sm text-zinc-500">{m.submit.subtitle}</p>
           </div>
           <SubmitComposer key={location.key} initialBountyId={readBountyId(location.state)} />
         </div>

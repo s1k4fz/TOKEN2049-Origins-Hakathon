@@ -1,4 +1,5 @@
 import { formatSolCompact } from '@/lib/format'
+import type { Messages } from '@/lib/i18n'
 import type { Claim, ClaimEvent, ClaimStage } from '@/types/claim'
 
 export type ClaimOutcome = 'running' | 'paid' | 'rejected' | 'failed'
@@ -20,14 +21,6 @@ export interface ClaimProgress {
 }
 
 export const claimStageOrder: ClaimStage[] = ['submitted', 'simulating', 'measured', 'reported', 'settled']
-
-export const claimStageTitles: Record<ClaimStage, string> = {
-  submitted: 'Received sealed submission',
-  simulating: 'Simulating in CRE confidential workflow',
-  measured: 'Invariant check',
-  reported: 'DON-signed report',
-  settled: 'Settled on Solana',
-}
 
 function findEvent<T extends ClaimEvent['type']>(events: ClaimEvent[], type: T): EventOf<T> | null {
   const event = events.find((item) => item.type === type)
@@ -71,15 +64,9 @@ export function isInvariantBroken(measured: EventOf<'measured'>): boolean {
   return measured.preLamports >= measured.thresholdLamports && measured.postLamports < measured.thresholdLamports
 }
 
-export function getClaimStatusLabel(progress: ClaimProgress): string {
-  switch (progress.outcome) {
-    case 'paid':
-      return `Paid ${formatSolCompact(progress.settled?.payoutDeltaLamports ?? 0)}`
-    case 'rejected':
-      return 'Rejected'
-    case 'failed':
-      return 'Failed'
-    default:
-      return 'Verifying…'
+export function getClaimStatusLabel(progress: ClaimProgress, m: Messages): string {
+  if (progress.outcome === 'paid') {
+    return m.claim.status.paid(formatSolCompact(progress.settled?.payoutDeltaLamports ?? 0))
   }
+  return m.claim.status[progress.outcome]
 }

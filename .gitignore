@@ -46,3 +46,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .idea/
+
+# --- deploy keys ---
+id_rsa*
+*_id_rsa*
+!chain/secrets.yaml

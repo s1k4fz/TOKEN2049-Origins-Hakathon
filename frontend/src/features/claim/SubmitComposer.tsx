@@ -1,30 +1,17 @@
-import { useState, type CSSProperties, type KeyboardEvent } from 'react'
-import {
-  ArrowUp,
-  Check,
-  ChevronDown,
-  FlaskConical,
-  Lock,
-  Scale,
-  Shield,
-  Terminal,
-  Wallet,
-} from 'lucide-react'
+import { useEffect, useState, type CSSProperties, type KeyboardEvent } from 'react'
+import { ArrowUp, ChevronDown, FlaskConical, PenLine, Scale, Shield, Wallet } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { ActionChip } from '@/components/ActionChip'
 import { ActionMenu, ActionMenuItem } from '@/components/ActionMenu'
 import { Button } from '@/components/ui/button'
 import { canSubmitTo, useBountiesQuery } from '@/features/bounty'
-import { base64ByteLength, sha256Hex } from '@/lib/bytes'
+import { useSolanaWallet } from '@/features/wallet'
+import { useMessages } from '@/hooks/useMessages'
+import { base64ByteLength, sha256OfBase64 } from '@/lib/bytes'
 import { formatSolCompact } from '@/lib/format'
+import { getApiErrorMessage } from '@/lib/http'
 import { cn } from '@/lib/utils'
-import {
-  BUILD_TX_COMMAND,
-  SAMPLE_EXPLOIT_TX,
-  SAMPLE_HONEST_TX,
-  SAMPLE_PAYOUT,
-} from '@/mock/sampleTransactions'
-import { useCreateClaimMutation } from './claimApi'
+import { useCreateClaimMutation, useSampleTxMutation, type SampleTxMode } from './claimApi'
 import { SealedExploitChip } from './SealedExploitChip'
 import {
   getPayoutError,
@@ -47,40 +34,78 @@ interface SealedTransaction {
 }
 
 export function SubmitComposer({ initialBountyId }: { initialBountyId?: string }) {
+  const m = useMessages()
   const navigate = useNavigate()
   const bountiesQuery = useBountiesQuery()
   const createClaim = useCreateClaimMutation()
+  const sampleTx = useSampleTxMutation()
+  const wallet = useSolanaWallet()
   const [draft, setDraft] = useState('')
   const [sealed, setSealed] = useState<SealedTransaction | null>(null)
   const [payout, setPayout] = useState('')
   const [selectedBountyId, setSelectedBountyId] = useState(initialBountyId)
-  const [commandCopied, setCommandCopied] = useState(false)
+  const [preparing, setPreparing] = useState<'building' | 'signing' | null>(null)
+  const [prepareError, setPrepareError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (wallet.address) setPayout((current) => (current.trim() ? current : (wallet.address ?? '')))
+  }, [wallet.address])
 
   const bounties = bountiesQuery.data ?? []
   const target = bounties.find((bounty) => bounty.id === selectedBountyId) ?? bounties[0]
-  const payoutError = target ? getPayoutError(payout, [target.vault, target.bountyAccount]) : null
-  const draftError = getTransactionError(draft)
+  const payoutError = target ? getPayoutError(payout, [target.vault, target.bountyAccount], m) : null
+  const draftError = getTransactionError(draft, m)
   const targetClosed = target ? !canSubmitTo(target) : false
   const canSend =
-    Boolean(sealed && target && payout.trim()) && !payoutError && !targetClosed && !createClaim.isPending
+    Boolean(sealed && target && payout.trim()) &&
+    !payoutError &&
+    !targetClosed &&
+    !createClaim.isPending &&
+    preparing === null
 
   const seal = (tx: string) => {
     setSealed({ tx, bytes: base64ByteLength(tx), sha256: null })
     setDraft('')
-    void sha256Hex(tx).then((sha256) => {
+    void sha256OfBase64(tx).then((sha256) => {
       setSealed((current) => (current?.tx === tx ? { ...current, sha256 } : current))
     })
   }
 
-  const fillSample = (tx: string) => {
-    seal(tx)
-    if (!payout.trim()) setPayout(SAMPLE_PAYOUT)
+  /** 交易在 Devnet 上现场生成；签名后约 60 秒过期，所以不能预先写死。 */
+  const fillSample = async (mode: SampleTxMode) => {
+    setPrepareError(null)
+    setPreparing('building')
+    try {
+      const sample = await sampleTx.mutateAsync({ mode })
+      seal(sample.tx)
+      if (!payout.trim()) setPayout(sample.payout)
+    } catch (error) {
+      setPrepareError(getApiErrorMessage(error) ?? m.submit.sampleFailed)
+    } finally {
+      setPreparing(null)
+    }
   }
 
-  const copyBuildCommand = async () => {
-    await navigator.clipboard.writeText(BUILD_TX_COMMAND)
-    setCommandCopied(true)
-    setTimeout(() => setCommandCopied(false), 1500)
+  const signWithWallet = async () => {
+    if (!wallet.address) {
+      void wallet.connect()
+      return
+    }
+    setPrepareError(null)
+    setPreparing('building')
+    try {
+      const sample = await sampleTx.mutateAsync({ mode: 'exploit', signer: wallet.address })
+      setPreparing('signing')
+      const signed = await wallet.signTransaction(sample.tx).catch(() => {
+        throw new Error(m.submit.walletSignFailed)
+      })
+      seal(signed)
+      setPayout(wallet.address)
+    } catch (error) {
+      setPrepareError(getApiErrorMessage(error) ?? m.submit.sampleFailed)
+    } finally {
+      setPreparing(null)
+    }
   }
 
   const handleDraftChange = (value: string) => {
@@ -108,8 +133,13 @@ export function SubmitComposer({ initialBountyId }: { initialBountyId?: string }
   }
 
   const errorMessage = targetClosed
-    ? 'This bounty has been paid and the vault is paused.'
-    : (draftError ?? payoutError ?? (createClaim.isError ? 'Submission failed. Please try again.' : null))
+    ? m.submit.targetClosed
+    : (draftError ??
+      payoutError ??
+      prepareError ??
+      (createClaim.isError ? (getApiErrorMessage(createClaim.error) ?? m.submit.submitFailed) : null))
+  const statusMessage =
+    preparing === 'building' ? m.submit.preparingTx : preparing === 'signing' ? m.submit.walletSigning : null
 
   return (
     <div className="space-y-2">
@@ -121,7 +151,7 @@ export function SubmitComposer({ initialBountyId }: { initialBountyId?: string }
             </div>
           ) : (
             <textarea
-              placeholder="Paste your signed exploit transaction (base64)…"
+              placeholder={m.submit.txPlaceholder}
               rows={1}
               value={draft}
               spellCheck={false}
@@ -133,10 +163,6 @@ export function SubmitComposer({ initialBountyId }: { initialBountyId?: string }
           )}
 
           <div className="flex items-center gap-2 px-4 pt-1 pb-4">
-            <span className="flex items-center gap-1.5 text-[12.5px] text-zinc-400">
-              <Lock className="size-3.5" />
-              Never broadcast · simulated only inside the enclave
-            </span>
             <div className="mr-[-4px] mb-[-4px] ml-auto">
               <Button
                 type="button"
@@ -148,7 +174,7 @@ export function SubmitComposer({ initialBountyId }: { initialBountyId?: string }
                   'rounded-full transition-colors',
                   canSend ? 'bg-zinc-900 text-white hover:bg-zinc-800' : 'cursor-default bg-zinc-200 text-zinc-400'
                 )}
-                aria-label="Submit privately"
+                aria-label={m.submit.submitAria}
               >
                 <ArrowUp className="size-[18px]" />
               </Button>
@@ -163,7 +189,7 @@ export function SubmitComposer({ initialBountyId }: { initialBountyId?: string }
             trigger={
               <Button type="button" variant="ghost" className={chinButtonClassName}>
                 <Shield className="size-[16.5px]" />
-                <span>{target ? target.name : 'Loading programs…'}</span>
+                <span>{target ? target.name : m.submit.loadingPrograms}</span>
                 <ChevronDown className="size-3.5 text-zinc-400" />
               </Button>
             }
@@ -188,8 +214,8 @@ export function SubmitComposer({ initialBountyId }: { initialBountyId?: string }
               value={payout}
               spellCheck={false}
               autoComplete="off"
-              aria-label="Payout address"
-              placeholder="Payout address (base58)"
+              aria-label={m.submit.payoutAria}
+              placeholder={m.submit.payoutPlaceholder}
               onChange={(event) => setPayout(event.target.value)}
               onKeyDown={handleKeyDown}
               className="h-7 min-w-0 flex-1 bg-transparent font-mono text-[13px] text-zinc-900 outline-none placeholder:font-sans placeholder:text-[14px] placeholder:text-zinc-400"
@@ -198,33 +224,42 @@ export function SubmitComposer({ initialBountyId }: { initialBountyId?: string }
         </div>
       </div>
 
-      <p className={cn('min-h-5 px-4 text-[13px] text-destructive', !errorMessage && 'invisible')}>
-        {errorMessage ?? 'placeholder'}
+      <p
+        className={cn(
+          'min-h-5 px-4 text-[13px]',
+          errorMessage ? 'text-destructive' : 'text-zinc-500',
+          !errorMessage && !statusMessage && 'invisible'
+        )}
+      >
+        {errorMessage ?? statusMessage ?? 'placeholder'}
       </p>
 
       <div className="flex flex-wrap justify-center gap-2">
         <ActionChip
           icon={FlaskConical}
           iconColor="#2F6F5E"
-          label="Use sample exploit"
-          onClick={() => fillSample(SAMPLE_EXPLOIT_TX)}
+          label={m.submit.useSampleExploit}
+          disabled={preparing !== null}
+          onClick={() => void fillSample('exploit')}
         />
         <ActionChip
           icon={Scale}
           iconColor="#62558A"
-          label="Use non-exploit transaction"
-          onClick={() => fillSample(SAMPLE_HONEST_TX)}
+          label={m.submit.useHonestTx}
+          disabled={preparing !== null}
+          onClick={() => void fillSample('honest')}
         />
         <ActionChip
-          icon={commandCopied ? Check : Terminal}
+          icon={PenLine}
           iconColor="#0047BB"
-          label={commandCopied ? 'Copied' : 'Copy CLI to build a tx'}
-          onClick={() => void copyBuildCommand()}
+          label={wallet.isConnected ? m.submit.signWithWallet : m.submit.connectToSign}
+          disabled={preparing !== null}
+          onClick={() => void signWithWallet()}
         />
       </div>
 
       <p className="pt-2 text-center text-[12.5px] text-zinc-400">
-        Signed transactions expire about 60 seconds after creation. Generate it right before you submit.
+        {m.submit.expiryHint}
       </p>
     </div>
   )

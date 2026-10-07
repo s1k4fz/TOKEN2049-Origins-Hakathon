@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
+import { useMessages } from '@/hooks/useMessages'
 import { cn } from '@/lib/utils'
 
 interface ContentPageLayoutProps {
@@ -22,12 +23,14 @@ export function ContentPageLayout({
   title,
   children,
   nextHref,
-  nextLabel = 'Next',
+  nextLabel,
   footerStart,
   showFooter = true,
   titleAlign = 'left',
   contentClassName,
 }: ContentPageLayoutProps) {
+  const m = useMessages()
+
   return (
     <div className="relative h-full min-h-0 overflow-hidden bg-zinc-50">
       <div
@@ -62,7 +65,7 @@ export function ContentPageLayout({
                 variant="outline"
                 className="h-9 rounded-full border-zinc-300 bg-transparent px-4 font-normal text-zinc-700 hover:bg-accent hover:text-accent-foreground"
               >
-                <Link to={nextHref}>{nextLabel}</Link>
+                <Link to={nextHref}>{nextLabel ?? m.common.next}</Link>
               </Button>
             ) : null}
           </div>

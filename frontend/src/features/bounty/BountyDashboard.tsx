@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { NetworkStatus } from '@/components/NetworkStatus'
 import { ProgressMarker } from '@/components/ProgressMarker'
 import { Button } from '@/components/ui/button'
+import { useMessages } from '@/hooks/useMessages'
 import { cn } from '@/lib/utils'
 import type { Bounty } from '@/types/bounty'
 import { BountyDashboardSidebar, type BountySection } from './BountyDashboardSidebar'
@@ -17,9 +18,10 @@ export function BountyDashboard({
   /** 提交列表由 claim feature 提供，页面负责拼进来。 */
   submissions: ReactNode
 }) {
+  const m = useMessages()
   const navigate = useNavigate()
   const [activeSection, setActiveSection] = useState<BountySection>('protection')
-  const conditions = getProtectionConditions(bounty)
+  const conditions = getProtectionConditions(bounty, m)
   const canSubmit = canSubmitTo(bounty)
 
   return (
@@ -32,7 +34,7 @@ export function BountyDashboard({
           onClick={() => navigate('/', { state: { bountyId: bounty.id } })}
           className="h-9 rounded-full bg-zinc-950 px-4 font-normal text-white hover:bg-zinc-800"
         >
-          {canSubmit ? 'Submit a finding' : 'Bounty paid'}
+          {canSubmit ? m.bounty.dashboard.submit : m.bounty.dashboard.paid}
         </Button>
       </div>
 
@@ -40,10 +42,9 @@ export function BountyDashboard({
         <div className="min-w-0 max-w-[670px] flex-1">
           {activeSection === 'protection' ? (
             <>
-              <h2 className="text-2xl leading-8 font-medium text-zinc-900">Protection</h2>
+              <h2 className="text-2xl leading-8 font-medium text-zinc-900">{m.bounty.dashboard.protectionTitle}</h2>
               <p className="mt-3 text-[16px] leading-[26px] font-normal text-zinc-600">
-                Every condition below is read live from Solana. If all of them hold, a transaction that breaks the
-                invariant is paid automatically.
+                {m.bounty.dashboard.protectionDescription}
               </p>
               <div className="mt-8 flex flex-col">
                 {conditions.map((condition, index) => {
@@ -62,10 +63,9 @@ export function BountyDashboard({
             </>
           ) : (
             <>
-              <h2 className="text-2xl leading-8 font-medium text-zinc-900">Submissions</h2>
+              <h2 className="text-2xl leading-8 font-medium text-zinc-900">{m.bounty.dashboard.submissionsTitle}</h2>
               <p className="mt-3 text-[16px] leading-[26px] font-normal text-zinc-600">
-                Every verified report for this program. Exploit transactions are never shown here, only what left the
-                enclave.
+                {m.bounty.dashboard.submissionsDescription}
               </p>
               <div className="mt-6">{submissions}</div>
             </>
@@ -77,10 +77,15 @@ export function BountyDashboard({
           activeSection={activeSection}
           onSectionChange={setActiveSection}
           sections={[
-            { id: 'protection', label: 'Protection', markerLabel: '1', progress: getProtectionProgress(bounty) },
+            {
+              id: 'protection',
+              label: m.bounty.dashboard.protectionTitle,
+              markerLabel: '1',
+              progress: getProtectionProgress(bounty),
+            },
             {
               id: 'submissions',
-              label: `Submissions (${bounty.submissionCount})`,
+              label: m.bounty.dashboard.submissionsTab(bounty.submissionCount),
               markerLabel: '2',
               progress: bounty.status === 'paid' ? 100 : 0,
             },

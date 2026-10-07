@@ -2,17 +2,7 @@ import type { Bounty } from '@/types/bounty'
 
 export type BountyListTab = 'all' | 'active' | 'paid'
 
-export const bountyListTabs: Array<{ value: BountyListTab; label: string }> = [
-  { value: 'all', label: 'All' },
-  { value: 'active', label: 'Active' },
-  { value: 'paid', label: 'Paid' },
-]
-
-export const emptyTabNotice: Record<BountyListTab, string> = {
-  all: 'No protected programs yet',
-  active: 'No active bounties',
-  paid: 'No bounty has been paid yet',
-}
+export const bountyListTabs: BountyListTab[] = ['all', 'active', 'paid']
 
 export function filterBounties(bounties: Bounty[], tab: BountyListTab, searchTerm: string): Bounty[] {
   const normalizedSearch = searchTerm.trim().toLowerCase()

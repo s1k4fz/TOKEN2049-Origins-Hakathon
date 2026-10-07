@@ -1,8 +1,11 @@
 export type BountyStatus = 'active' | 'cancel_pending' | 'paid' | 'inactive'
 
+export type SubmissionOutcome = 'verifying' | 'paid' | 'rejected' | 'failed'
+
 export interface BountyLatestSubmission {
   claimId: string
-  summary: string
+  outcome: SubmissionOutcome
+  payout: string
 }
 
 /** 一个受保护的程序及其赏金（金库 PDA + 赏金 PDA 的链上状态）。 */

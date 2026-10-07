@@ -1,6 +1,7 @@
 import { type CSSProperties } from 'react'
 import { Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useMessages } from '@/hooks/useMessages'
 import { cn } from '@/lib/utils'
 import { bountyListTabs, type BountyListTab } from './bountyFilters'
 
@@ -21,26 +22,28 @@ export function BountiesTabs({
   searchTerm: string
   onSearchTermChange: (term: string) => void
 }) {
+  const m = useMessages()
+
   return (
     <div
       style={BOUNTIES_TOOLBAR_STYLE}
       className="flex min-h-15 w-full flex-col gap-4 py-2 md:flex-row md:flex-nowrap md:items-center md:gap-0"
     >
-      <div role="tablist" aria-label="Bounty status" className="flex shrink-0 flex-nowrap items-center gap-2">
+      <div role="tablist" aria-label={m.bounty.tabsAria} className="flex shrink-0 flex-nowrap items-center gap-2">
         {bountyListTabs.map((tab) => (
           <Button
-            key={tab.value}
+            key={tab}
             type="button"
             role="tab"
             variant="ghost"
-            aria-selected={activeTab === tab.value}
+            aria-selected={activeTab === tab}
             className={cn(
               'rounded-full bg-transparent px-4 font-normal text-muted-foreground hover:bg-transparent hover:text-foreground',
-              activeTab === tab.value && 'bg-muted text-foreground hover:bg-muted hover:text-foreground'
+              activeTab === tab && 'bg-muted text-foreground hover:bg-muted hover:text-foreground'
             )}
-            onClick={() => onActiveTabChange(tab.value)}
+            onClick={() => onActiveTabChange(tab)}
           >
-            {tab.label}
+            {m.bounty.tabs[tab]}
           </Button>
         ))}
       </div>
@@ -55,8 +58,8 @@ export function BountiesTabs({
             id="bounties-search-input"
             type="text"
             autoComplete="off"
-            aria-label="Search programs"
-            placeholder="Search programs"
+            aria-label={m.bounty.searchPlaceholder}
+            placeholder={m.bounty.searchPlaceholder}
             value={searchTerm}
             onChange={(event) => onSearchTermChange(event.target.value)}
             className="h-[34px] w-full rounded-full border border-zinc-200 bg-background ps-9 pe-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/80 focus:border-zinc-300"

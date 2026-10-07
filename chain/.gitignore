@@ -1,0 +1,8 @@
+proofs/
+keys/
+programs/*/target/
+programs/*/src/id.rs
+**/node_modules/
+**/dist/
+**/.env
+**/.cre_build_tmp.js
