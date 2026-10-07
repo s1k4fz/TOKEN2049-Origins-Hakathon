@@ -46,14 +46,10 @@ export function AppLayout() {
     return () => el.removeEventListener('scroll', handleScroll)
   }, [handleScroll])
 
-  useEffect(() => {
-    document.documentElement.lang = m.meta.htmlLang
-  }, [m.meta.htmlLang])
-
   const navigationSidebarContent = (
     <>
       <div className="sticky top-14 z-10 flex flex-col gap-0.5 bg-zinc-100">
-        <SidebarItem icon={SquarePen} label={m.nav.submit} to="/" end />
+        <SidebarItem icon={SquarePen} label={m.nav.submit} to="/submit" end />
         <SidebarItem icon={Shield} label={m.nav.bounties} to="/bounties" end />
         <SidebarItem icon={BookOpen} label={m.nav.protect} to="/protect" />
         <div

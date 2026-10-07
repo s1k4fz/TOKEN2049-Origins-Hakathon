@@ -217,7 +217,7 @@ export function ClaimVerificationCard({ claim, progress }: { claim: Claim; progr
         <Button
           type="button"
           className={primaryActionButtonClassName}
-          onClick={() => navigate('/', { state: { bountyId: claim.bountyId } })}
+          onClick={() => navigate('/submit', { state: { bountyId: claim.bountyId } })}
         >
           {m.common.tryAgain}
         </Button>

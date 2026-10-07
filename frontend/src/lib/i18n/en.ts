@@ -28,6 +28,73 @@ export const en = {
     submissions: 'Submissions',
     more: 'More',
   },
+  landing: {
+    nav: {
+      how: 'How it works',
+      privacy: 'Privacy',
+      protocols: 'For protocols',
+      launch: 'Launch app',
+    },
+    hero: {
+      badge: 'Live on Solana Devnet · Chainlink CRE',
+      titleLine1: 'Bug bounties that',
+      titleLine2: 'pay themselves.',
+      subtitle:
+        'Prove an exploit without publishing it. Your transaction is simulated inside a Chainlink CRE confidential workflow. If it breaks the invariant, the vault is paused and you are paid in the same Solana transaction.',
+      primary: 'Submit a finding',
+      secondary: 'Protect your program',
+      statBounty: 'Live bounty',
+      statInvariant: 'Invariant',
+      statInvariantValue: (threshold: string) => `vault ≥ ${threshold}`,
+      statSettle: 'Exploit to payout',
+      statSettleValue: '≈ 12 s',
+    },
+    how: {
+      eyebrow: 'How it works',
+      title: 'Three steps. No triage queue.',
+      steps: [
+        {
+          title: 'Seal',
+          body: 'Sign the exploit transaction with your own wallet. It is sealed in your browser and never broadcast.',
+        },
+        {
+          title: 'Simulate',
+          body: 'A Chainlink CRE confidential workflow replays it against live Solana state inside a TEE and measures the vault before and after.',
+        },
+        {
+          title: 'Settle',
+          body: 'If the invariant breaks, a DON-signed 96-byte report pauses the vault and pays your address in one transaction.',
+        },
+      ],
+    },
+    verdict: {
+      eyebrow: 'Privacy',
+      title: 'Only the verdict leaves the enclave.',
+      body: 'The exploit is the valuable part, so it never comes out. The report carries six fields: two balances, the slot, the threshold, your payout address and the vault.',
+      inputLabel: 'exploit tx · base64',
+      enclaveLabel: 'tee · aws nitro',
+      enclaveStatus: '● invariant broken',
+      outputLabel: 'report · 96 bytes',
+    },
+    protocols: {
+      eyebrow: 'For protocols',
+      title: 'Pay for proof, not for reports.',
+      body: 'Add a pause hook, make the bounty program its guardian, and lock a bounty. Every rule below is enforced on-chain.',
+      points: [
+        'The bounty is locked in a program, not promised in a PDF.',
+        'You define the invariant. The enclave checks it.',
+        'Only a valid report can pause you, and only while paying.',
+        'Withdrawals wait 7 days, so the bounty is always really there.',
+      ],
+      cta: 'Read the integration guide',
+    },
+    stack: 'Built on',
+    footer: {
+      title: 'Found something? Prove it privately.',
+      cta: 'Launch app',
+      note: 'Demo on Solana Devnet. The CRE workflow runs in local simulation until confidential-workflow deployment access is granted.',
+    },
+  },
   wallet: {
     connect: 'Connect wallet',
     connected: (address: string) => address,

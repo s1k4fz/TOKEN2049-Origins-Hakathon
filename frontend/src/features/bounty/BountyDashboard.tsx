@@ -31,7 +31,7 @@ export function BountyDashboard({
         <Button
           type="button"
           disabled={!canSubmit}
-          onClick={() => navigate('/', { state: { bountyId: bounty.id } })}
+          onClick={() => navigate('/submit', { state: { bountyId: bounty.id } })}
           className="h-9 rounded-full bg-zinc-950 px-4 font-normal text-white hover:bg-zinc-800"
         >
           {canSubmit ? m.bounty.dashboard.submit : m.bounty.dashboard.paid}

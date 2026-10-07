@@ -30,6 +30,73 @@ export const zh: Messages = {
     submissions: '我的提交',
     more: '更多',
   },
+  landing: {
+    nav: {
+      how: '工作原理',
+      privacy: '隐私',
+      protocols: '项目方',
+      launch: '进入应用',
+    },
+    hero: {
+      badge: '已上线 Solana Devnet · Chainlink CRE',
+      titleLine1: '自己会付钱的',
+      titleLine2: '漏洞赏金。',
+      subtitle:
+        '不公开漏洞，也能证明漏洞。你的攻击交易只在 Chainlink CRE 机密工作流里模拟执行；一旦打破不变量，金库会被暂停，赏金在同一笔 Solana 交易里打到你的地址。',
+      primary: '提交漏洞',
+      secondary: '保护你的程序',
+      statBounty: '当前赏金',
+      statInvariant: '不变量',
+      statInvariantValue: (threshold) => `金库 ≥ ${threshold}`,
+      statSettle: '从攻击到到账',
+      statSettleValue: '≈ 12 秒',
+    },
+    how: {
+      eyebrow: '工作原理',
+      title: '三步完成，不用排队等审核。',
+      steps: [
+        {
+          title: '密封',
+          body: '用你自己的钱包签名攻击交易。交易在浏览器里密封，永远不会被广播。',
+        },
+        {
+          title: '模拟',
+          body: 'Chainlink CRE 机密工作流在 TEE 里针对 Solana 实时状态重放这笔交易，测量金库在前后的余额。',
+        },
+        {
+          title: '结算',
+          body: '只要不变量被打破，DON 签名的 96 字节报告就会在一笔交易里暂停金库并向你付款。',
+        },
+      ],
+    },
+    verdict: {
+      eyebrow: '隐私',
+      title: '离开飞地的只有结论。',
+      body: '攻击交易是最值钱的部分，所以它永远不会出来。报告里只有六个字段：两个余额、slot、阈值、你的收款地址和金库地址。',
+      inputLabel: '攻击交易 · base64',
+      enclaveLabel: 'tee · aws nitro',
+      enclaveStatus: '● 不变量被打破',
+      outputLabel: '报告 · 96 字节',
+    },
+    protocols: {
+      eyebrow: '项目方',
+      title: '为证明付钱，而不是为报告付钱。',
+      body: '加一个暂停钩子，把赏金程序设为守护者，再锁定一笔赏金。下面每一条规则都由链上强制执行。',
+      points: [
+        '赏金锁在程序里，而不是写在 PDF 里的承诺。',
+        '不变量由你定义，由飞地检查。',
+        '只有有效报告才能暂停你，而且只能在付款的同时暂停。',
+        '撤回赏金要等 7 天，所以赏金永远真实存在。',
+      ],
+      cta: '阅读接入指南',
+    },
+    stack: '技术栈',
+    footer: {
+      title: '发现了漏洞？私密地证明它。',
+      cta: '进入应用',
+      note: '演示运行在 Solana Devnet。在获得机密工作流部署权限之前，CRE 工作流在本地模拟运行。',
+    },
+  },
   wallet: {
     connect: '连接钱包',
     connected: (address) => address,

@@ -145,3 +145,35 @@
     @apply min-h-screen;
   }
 }
+
+/* 落地页的点阵背景与点阵字标闪烁 */
+@utility landing-dots {
+  background-image: radial-gradient(circle, rgb(24 24 27 / 0.16) 1px, transparent 1.4px);
+  background-size: 18px 18px;
+}
+
+@utility landing-dot-grid {
+  background-image: radial-gradient(circle, rgb(255 255 255 / 0.07) 1px, transparent 1.4px);
+  background-size: 14px 14px;
+}
+
+@keyframes landing-dot-pulse {
+  0%,
+  90%,
+  100% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 0.2;
+  }
+}
+
+.landing-dot {
+  animation: landing-dot-pulse 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-dot {
+    animation: none;
+  }
+}
