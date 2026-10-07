@@ -1,6 +1,6 @@
 ---
 description: 前端技术栈、目录分层、状态管理与代码风格规范（沿用 Lemma AI 前端规范）
-globs: frontend/**
+globs: app/web/**
 alwaysApply: false
 ---
 
@@ -19,7 +19,7 @@ alwaysApply: false
 React 19 + TypeScript + Vite + Tailwind CSS v4 + shadcn/ui（new-york / neutral / lucide）+ React Router + TanStack Query + Zustand + axios；部署到 Vercel。
 未经明确决策，不引入新的状态管理库、前端框架或平行的组件体系。
 
-## 目录与分层（`frontend/src/`）
+## 目录与分层（`app/web/src/`）
 
 - `features/`：业务逻辑主要归属地。有业务语义的组件、hooks、请求逻辑放回所属 feature；feature 之间只能通过对方根目录的 `index.ts` 引用，禁止引用对方内部文件
 - `components/`：只放无业务语义的通用 UI（`ui/` 为 shadcn 基础组件）。禁止在这里发请求或绑定业务状态

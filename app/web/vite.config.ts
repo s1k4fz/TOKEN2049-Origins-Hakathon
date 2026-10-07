@@ -14,7 +14,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': process.env.API_PROXY_TARGET ?? 'http://127.0.0.1:8787',
+      '/api': {
+        target: process.env.API_PROXY_TARGET ?? 'https://silentcla.im',
+        changeOrigin: true,
+      },
     },
   },
   test: {

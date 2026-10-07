@@ -1,7 +1,7 @@
 proofs/
 keys/
-programs/*/target/
-programs/*/src/id.rs
+bounty-program/target/
+bounty-program/src/id.rs
 **/node_modules/
 **/dist/
 **/.env

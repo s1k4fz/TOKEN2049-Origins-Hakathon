@@ -4,7 +4,7 @@
 
 ## 漏洞
 
-`programs/vulnerable_vault` 是一个正常可用的存取款池：`deposit` 存入并记到签名者自己的仓位，`withdraw` 付清签名者自己的仓位。池子还把闲置 lamports 作为闪电贷借出：`flash_borrow` 转出资金，并通过 Instructions sysvar 确认同一笔交易后面有一条 `flash_end`；`flash_end` 要求金库余额回到借出前的数值。
+`../demo-vault` 是一个正常可用的存取款池：`deposit` 存入并记到签名者自己的仓位，`withdraw` 付清签名者自己的仓位。池子还把闲置 lamports 作为闪电贷借出：`flash_borrow` 转出资金，并通过 Instructions sysvar 确认同一笔交易后面有一条 `flash_end`；`flash_end` 要求金库余额回到借出前的数值。
 
 Solana 不允许程序经由别的程序被重入，所以闪电贷没法回调借款人。借款人改为在 `flash_borrow` 和 `flash_end` 之间放自己的指令。这段区间就是 EVM 里回调期间的那段"状态未结清"窗口。
 
@@ -26,7 +26,7 @@ Solana 不允许程序经由别的程序被重入，所以闪电贷没法回调�
 | `bounty` | 本机刚部署的赏金 PDA。只用来拒绝把它当作收款地址 |
 | `threshold` | 1 SOL，单位 lamports。谓词是 `pre >= threshold && post < threshold` |
 
-`script/test.sh` 在部署之后写一份临时配置。仓库里的 `bounty-cre/config.staging.json` 是占位。
+`script/test.sh` 在部署之后写一份临时配置。仓库里的 `workflow/config.staging.json` 是占位。
 
 工作流签出的报告是 96 字节：`pre`、`post`、`slot`、`threshold`（u64 小端），再接收款地址和金库地址。`on_report` 按同样的布局解码，`test.sh` 把工作流输出的这 96 字节原样提交。
 
@@ -68,9 +68,9 @@ bash script/test.sh "$(solana-keygen pubkey keys/payout.json)"
 
 | 路径 | 作用 |
 | --- | --- |
-| `programs/vulnerable_vault` | 带闪电贷的存取款池，`deposit` 缺少借款中的锁 |
-| `programs/cre_bounty` | 核对报告、暂停金库、支付赏金，带撤回时间锁 |
-| `bounty-cre/` | 机密工作流。未公开交易进，96 字节报告出 |
+| `../demo-vault` | 带闪电贷的存取款池，`deposit` 缺少借款中的锁 |
+| `bounty-program` | 核对报告、暂停金库、支付赏金，带撤回时间锁 |
+| `workflow/` | 机密工作流。未公开交易进，96 字节报告出 |
 | `script/launch.sh` | 编译并启动本机验证器、金库和赏金 |
 | `script/test.sh` | 提交未公开的闪电贷攻击交易并领走赏金 |
 | `script/chain.ts` | 部署账户、构造交易、提交报告 |

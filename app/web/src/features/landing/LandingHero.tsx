@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { useBountiesQuery } from '@/features/bounty'
 import { useMessages } from '@/hooks/useMessages'
 import { formatSolCompact } from '@/lib/format'
-import { AsciiTorus } from './AsciiTorus'
+import { EnclaveAnimation } from './EnclaveAnimation'
 
 function HeroStat({ label, value }: { label: string; value: string }) {
   return (
@@ -26,7 +26,7 @@ export function LandingHero() {
         aria-hidden
         className="landing-dots absolute inset-0 [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,black,transparent)]"
       />
-      <div className="relative mx-auto grid w-full max-w-[1200px] items-center gap-12 px-6 pt-20 pb-24 lg:grid-cols-[1.05fr_1fr] lg:pt-28">
+      <div className="relative mx-auto grid w-full max-w-[1200px] items-center gap-8 px-6 pt-10 pb-16 lg:grid-cols-[0.9fr_1.1fr] lg:pt-8">
         <div className="animate-in duration-700 fade-in-0 slide-in-from-bottom-2">
           <span className="inline-flex h-7 items-center gap-2 rounded-full border border-zinc-200 bg-white/70 px-3 text-[12.5px] font-medium text-zinc-600">
             <span className="relative flex size-2">
@@ -69,9 +69,10 @@ export function LandingHero() {
           </div>
         </div>
 
-        <div className="relative flex animate-in justify-center delay-150 duration-700 fade-in-0">
-          <AsciiTorus className="text-[11px] leading-[12px] text-zinc-900 sm:text-[14px] sm:leading-[15px] xl:text-[16px] xl:leading-[17px]" />
-        </div>
+        <EnclaveAnimation
+          text={`+${bounty ? formatSolCompact(bounty.amountLamports) : '0.1 SOL'}`}
+          className="h-[400px] animate-in delay-150 duration-700 fade-in-0 sm:h-[500px] lg:-mr-24 lg:h-[580px]"
+        />
       </div>
     </section>
   )

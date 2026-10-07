@@ -50,4 +50,4 @@ yarn-error.log*
 # --- deploy keys ---
 id_rsa*
 *_id_rsa*
-!chain/secrets.yaml
+!protocol/secrets.yaml

@@ -79,15 +79,15 @@ VAULT_PROGRAM_ID="$(solana-keygen pubkey "${KEYS}/vault-program.json")"
 BOUNTY_PROGRAM_ID="$(solana-keygen pubkey "${KEYS}/bounty-program.json")"
 export RPC KEYS VAULT_PROGRAM_ID BOUNTY_PROGRAM_ID
 
-printf 'solana_program::declare_id!("%s");\n' "${VAULT_PROGRAM_ID}" > programs/vulnerable_vault/src/id.rs
-printf 'solana_program::declare_id!("%s");\n' "${BOUNTY_PROGRAM_ID}" > programs/cre_bounty/src/id.rs
+printf 'solana_program::declare_id!("%s");\n' "${VAULT_PROGRAM_ID}" > ../demo-vault/src/id.rs
+printf 'solana_program::declare_id!("%s");\n' "${BOUNTY_PROGRAM_ID}" > bounty-program/src/id.rs
 
 echo "== build vault and bounty =="
-cargo-build-sbf --no-rustup-override --manifest-path programs/vulnerable_vault/Cargo.toml
-cargo-build-sbf --no-rustup-override --manifest-path programs/cre_bounty/Cargo.toml
+cargo-build-sbf --no-rustup-override --manifest-path ../demo-vault/Cargo.toml
+cargo-build-sbf --no-rustup-override --manifest-path bounty-program/Cargo.toml
 
 echo "== install workflow deps =="
-(cd bounty-cre && bun install --frozen-lockfile)
+(cd workflow && bun install --frozen-lockfile)
 (cd script && bun install)
 
 echo "== solana-test-validator mainnet fork =="
@@ -179,13 +179,13 @@ solana program deploy \
   --keypair "${KEYS}/payer.json" \
   --program-id "${KEYS}/vault-program.json" \
   --buffer "${KEYS}/vault-buffer.json" \
-  programs/vulnerable_vault/target/deploy/vulnerable_vault.so
+  ../demo-vault/target/deploy/vulnerable_vault.so
 solana program deploy \
   --url "${RPC}" \
   --keypair "${KEYS}/payer.json" \
   --program-id "${KEYS}/bounty-program.json" \
   --buffer "${KEYS}/bounty-buffer.json" \
-  programs/cre_bounty/target/deploy/cre_bounty.so
+  bounty-program/target/deploy/cre_bounty.so
 
 python3 - "${RPC}" "${VAULT_PROGRAM_ID}" "${BOUNTY_PROGRAM_ID}" << 'PY'
 import json, sys, time, urllib.request

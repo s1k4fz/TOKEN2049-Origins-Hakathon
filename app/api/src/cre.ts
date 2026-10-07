@@ -47,7 +47,7 @@ export async function simulate(
         [
           'workflow',
           'simulate',
-          'bounty-cre',
+          'workflow',
           '--target',
           'staging-settings',
           '--non-interactive',

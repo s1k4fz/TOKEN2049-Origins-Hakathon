@@ -120,7 +120,7 @@ PY
 echo "== workflow =="
 set +e
 CRE_SOLANA_PRIVATE_KEY="${KEYS}/forwarder.json" \
-cre workflow simulate bounty-cre \
+cre workflow simulate workflow \
   --target staging-settings \
   --non-interactive \
   --trigger-index 0 \

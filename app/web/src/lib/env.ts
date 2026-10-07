@@ -2,5 +2,6 @@
 export const env = {
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL ?? '',
   reownProjectId: import.meta.env.VITE_REOWN_PROJECT_ID ?? '',
-  appUrl: import.meta.env.VITE_APP_URL ?? window.location.origin,
+  // WalletConnect 要求 metadata.url 与当前页面同源，所以直接取当前域名。
+  appUrl: window.location.origin,
 }
